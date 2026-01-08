@@ -3,75 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventario Masivo - Control BCV</title>
+    <title>Inventario Pro - Control BCV</title>
     <style>
-        body { font-family: sans-serif; background: #f4f4f4; padding: 20px; }
-        .controls { background: white; padding: 20px; border-radius: 8px; position: sticky; top: 10px; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        #lista-productos { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 20px; }
-        .card { background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd; }
-        .precio-bs { color: #27ae60; font-weight: bold; }
-        .precio-usd { color: #2980b9; }
-        input { padding: 8px; width: 200px; }
+        :root { --primary: #2c3e50; --accent: #27ae60; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #f0f2f5; }
+        .header { background: var(--primary); color: white; padding: 1rem; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 10px; }
+        input, select { padding: 10px; border-radius: 5px; border: none; width: 100%; box-sizing: border-box; }
+        .container { padding: 20px; }
+        .stats { font-size: 0.9rem; margin-top: 10px; opacity: 0.9; }
+        #lista-productos { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.3s; border-top: 4px solid var(--accent); }
+        .card:hover { transform: translateY(-5px); }
+        .card h4 { margin: 0 0 10px 0; color: var(--primary); text-transform: uppercase; font-size: 0.9rem; }
+        .info { font-size: 0.85rem; color: #666; margin: 5px 0; }
+        .precio-box { margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee; }
+        .bs { color: var(--accent); font-weight: bold; font-size: 1.2rem; }
+        .usd { color: #2980b9; font-size: 0.9rem; }
+        .badge { background: #eee; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; margin-right: 5px; }
     </style>
 </head>
 <body>
 
-    <div class="controls">
-        <h2>Gestión de Inventario</h2>
-        <input type="text" id="buscador" placeholder="Buscar producto..." onkeyup="filtrar()">
-        <p>Tasa BCV del día: <strong id="tasa-display">--</strong> BS</p>
-    </div>
-
-    <div id="lista-productos">
+<div class="header">
+    <div style="max-width: 1200px; margin: auto;">
+        <strong>Tasa BCV: <span id="tasa-val">37.50</span> BS</strong>
+        <div class="filter-grid">
+            <input type="text" id="searchGen" placeholder="Buscar producto o modelo..." oninput="ejecutarFiltros()">
+            <input type="text" id="searchMarca" placeholder="Marca" oninput="ejecutarFiltros()">
+            <input type="text" id="searchProv" placeholder="Proveedor" oninput="ejecutarFiltros()">
         </div>
+        <div class="stats">Mostrando: <span id="contador">0</span> de 10,000 productos</div>
+    </div>
+</div>
 
-    <script>
-        // Configuración inicial
-        const tasaBCV = 37.50; // Ajustar según la tasa del día
-        document.getElementById('tasa-display').innerText = tasaBCV;
+<div class="container">
+    <div id="lista-productos"></div>
+</div>
 
-        // Simulamos la carga de 10,000 productos
-        // En un caso real, aquí usarías: fetch('tu_archivo_productos.json')
-        let inventario = Array.from({ length: 10000 }, (_, i) => ({
-            id: i + 1,
-            nombre: `Producto ${i + 1}`,
-            precio_usd: (Math.random() * 100).toFixed(2),
-            stock: Math.floor(Math.random() * 500)
-        }));
+<script>
+    // Configuración
+    const tasaBCV = 37.50; 
+    document.getElementById('tasa-val').innerText = tasaBCV;
 
-        function mostrarProductos(data) {
-            const contenedor = document.getElementById('lista-productos');
-            contenedor.innerHTML = "";
+    // Generador de 10,000 productos para la demo
+    // En producción, reemplaza esto con: const inventario = await fetch('data.json').then(r => r.json());
+    const marcas = ["Samsung", "Apple", "Xiaomi", "LG", "Sony"];
+    const proveedores = ["Importadora A", "Distribuidora X", "Global Tech", "Mundo Celular"];
+    
+    let inventario = Array.from({ length: 10000 }, (_, i) => ({
+        id: i + 1,
+        producto: "Smartphone",
+        modelo: `Galaxy S${20 + (i % 50)}`,
+        marca: marcas[i % marcas.length],
+        proveedor: proveedores[i % proveedores.length],
+        precio_usd: (Math.random() * 500 + 100).toFixed(2),
+        stock: Math.floor(Math.random() * 100)
+    }));
+
+    function ejecutarFiltros() {
+        const qGen = document.getElementById('searchGen').value.toLowerCase();
+        const qMarca = document.getElementById('searchMarca').value.toLowerCase();
+        const qProv = document.getElementById('searchProv').value.toLowerCase();
+
+        const filtrados = inventario.filter(p => {
+            return (p.producto.toLowerCase().includes(qGen) || p.modelo.toLowerCase().includes(qGen)) &&
+                   (p.marca.toLowerCase().includes(qMarca)) &&
+                   (p.proveedor.toLowerCase().includes(qProv));
+        });
+
+        renderizar(filtrados);
+    }
+
+    function renderizar(datos) {
+        const contenedor = document.getElementById('lista-productos');
+        const contador = document.getElementById('contador');
+        
+        // Rendimiento: Solo dibujamos los primeros 100 resultados para evitar lag
+        const fragmento = document.createDocumentFragment();
+        const limite = datos.slice(0, 100);
+
+        limite.forEach(p => {
+            const precioBS = (p.precio_usd * tasaBCV).toLocaleString('es-VE', { minimumFractionDigits: 2 });
             
-            // Limitamos a los primeros 100 por rendimiento al renderizar
-            const vistaPrevia = data.slice(0, 100); 
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.innerHTML = `
+                <h4>${p.producto} ${p.modelo}</h4>
+                <div class="info">
+                    <span class="badge">${p.marca}</span>
+                    <span class="badge">${p.proveedor}</span>
+                </div>
+                <div class="precio-box">
+                    <div class="usd">Ref: $${p.precio_usd}</div>
+                    <div class="bs">Bs. ${precioBS}</div>
+                    <small style="display:block; margin-top:5px;">Disponible: ${p.stock} und.</small>
+                </div>
+            `;
+            fragmento.appendChild(div);
+        });
 
-            vistaPrevia.forEach(p => {
-                // REGLA: Si el pago no es Divisa, convertir a BS según tasa BCV
-                const precioBS = (p.precio_usd * tasaBCV).toFixed(2);
-                
-                const div = document.createElement('div');
-                div.className = 'card';
-                div.innerHTML = `
-                    <h4>${p.nombre}</h4>
-                    <p class="precio-usd">Ref: $${p.precio_usd}</p>
-                    <p class="precio-bs">BS: ${precioBS}</p>
-                    <small>Stock: ${p.stock}</small>
-                `;
-                contenedor.appendChild(div);
-            });
-        }
+        contenedor.innerHTML = "";
+        contenedor.appendChild(fragmento);
+        contador.innerText = datos.length;
+    }
 
-        function filtrar() {
-            const termino = document.getElementById('buscador').value.toLowerCase();
-            const filtrados = inventario.filter(p => 
-                p.nombre.toLowerCase().includes(termino)
-            );
-            mostrarProductos(filtrados);
-        }
+    // Inicializar
+    renderizar(inventario);
+</script>
 
-        // Carga inicial
-        mostrarProductos(inventario);
-    </script>
 </body>
 </html>
