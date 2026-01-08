@@ -3,114 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventario Pro - Control BCV</title>
+    <title>Sistema de Inventario - Tasa BCV</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root { --primary: #2c3e50; --accent: #27ae60; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #f0f2f5; }
-        .header { background: var(--primary); color: white; padding: 1rem; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 10px; }
-        input, select { padding: 10px; border-radius: 5px; border: none; width: 100%; box-sizing: border-box; }
-        .container { padding: 20px; }
-        .stats { font-size: 0.9rem; margin-top: 10px; opacity: 0.9; }
-        #lista-productos { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
-        .card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.3s; border-top: 4px solid var(--accent); }
-        .card:hover { transform: translateY(-5px); }
-        .card h4 { margin: 0 0 10px 0; color: var(--primary); text-transform: uppercase; font-size: 0.9rem; }
-        .info { font-size: 0.85rem; color: #666; margin: 5px 0; }
-        .precio-box { margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee; }
-        .bs { color: var(--accent); font-weight: bold; font-size: 1.2rem; }
-        .usd { color: #2980b9; font-size: 0.9rem; }
-        .badge { background: #eee; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; margin-right: 5px; }
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+        .bcv-card { border-left: 5px solid #059669; }
     </style>
 </head>
-<body>
+<body class="bg-gray-100 min-h-screen">
 
-<div class="header">
-    <div style="max-width: 1200px; margin: auto;">
-        <strong>Tasa BCV: <span id="tasa-val">37.50</span> BS</strong>
-        <div class="filter-grid">
-            <input type="text" id="searchGen" placeholder="Buscar producto o modelo..." oninput="ejecutarFiltros()">
-            <input type="text" id="searchMarca" placeholder="Marca" oninput="ejecutarFiltros()">
-            <input type="text" id="searchProv" placeholder="Proveedor" oninput="ejecutarFiltros()">
-        </div>
-        <div class="stats">Mostrando: <span id="contador">0</span> de 10,000 productos</div>
-    </div>
-</div>
-
-<div class="container">
-    <div id="lista-productos"></div>
-</div>
-
-<script>
-    // Configuración
-    const tasaBCV = 37.50; 
-    document.getElementById('tasa-val').innerText = tasaBCV;
-
-    // Generador de 10,000 productos para la demo
-    // En producción, reemplaza esto con: const inventario = await fetch('data.json').then(r => r.json());
-    const marcas = ["Samsung", "Apple", "Xiaomi", "LG", "Sony"];
-    const proveedores = ["Importadora A", "Distribuidora X", "Global Tech", "Mundo Celular"];
-    
-    let inventario = Array.from({ length: 10000 }, (_, i) => ({
-        id: i + 1,
-        producto: "Smartphone",
-        modelo: `Galaxy S${20 + (i % 50)}`,
-        marca: marcas[i % marcas.length],
-        proveedor: proveedores[i % proveedores.length],
-        precio_usd: (Math.random() * 500 + 100).toFixed(2),
-        stock: Math.floor(Math.random() * 100)
-    }));
-
-    function ejecutarFiltros() {
-        const qGen = document.getElementById('searchGen').value.toLowerCase();
-        const qMarca = document.getElementById('searchMarca').value.toLowerCase();
-        const qProv = document.getElementById('searchProv').value.toLowerCase();
-
-        const filtrados = inventario.filter(p => {
-            return (p.producto.toLowerCase().includes(qGen) || p.modelo.toLowerCase().includes(qGen)) &&
-                   (p.marca.toLowerCase().includes(qMarca)) &&
-                   (p.proveedor.toLowerCase().includes(qProv));
-        });
-
-        renderizar(filtrados);
-    }
-
-    function renderizar(datos) {
-        const contenedor = document.getElementById('lista-productos');
-        const contador = document.getElementById('contador');
-        
-        // Rendimiento: Solo dibujamos los primeros 100 resultados para evitar lag
-        const fragmento = document.createDocumentFragment();
-        const limite = datos.slice(0, 100);
-
-        limite.forEach(p => {
-            const precioBS = (p.precio_usd * tasaBCV).toLocaleString('es-VE', { minimumFractionDigits: 2 });
+    <header class="bg-slate-800 text-white sticky top-0 z-50 shadow-lg">
+        <div class="max-w-7xl mx-auto p-4">
+            <div class="flex flex-wrap justify-between items-center mb-4">
+                <h1 class="text-xl font-bold">📦 Inventario General</h1>
+                <div class="bg-green-600 px-4 py-2 rounded-lg font-mono text-sm">
+                    Tasa BCV: <input type="number" id="tasaBCV" value="37.50" step="0.01" class="bg-transparent font-bold w-16 outline-none text-white"> BS
+                </div>
+            </div>
             
-            const div = document.createElement('div');
-            div.className = 'card';
-            div.innerHTML = `
-                <h4>${p.producto} ${p.modelo}</h4>
-                <div class="info">
-                    <span class="badge">${p.marca}</span>
-                    <span class="badge">${p.proveedor}</span>
-                </div>
-                <div class="precio-box">
-                    <div class="usd">Ref: $${p.precio_usd}</div>
-                    <div class="bs">Bs. ${precioBS}</div>
-                    <small style="display:block; margin-top:5px;">Disponible: ${p.stock} und.</small>
-                </div>
-            `;
-            fragmento.appendChild(div);
-        });
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <input type="text" id="f_producto" placeholder="Producto..." class="p-2 rounded bg-slate-700 border-none text-white placeholder-slate-400 focus:ring-2 focus:ring-green-500" oninput="filtrar()">
+                <input type="text" id="f_marca" placeholder="Marca..." class="p-2 rounded bg-slate-700 border-none text-white placeholder-slate-400 focus:ring-2 focus:ring-green-500" oninput="filtrar()">
+                <input type="text" id="f_modelo" placeholder="Modelo..." class="p-2 rounded bg-slate-700 border-none text-white placeholder-slate-400 focus:ring-2 focus:ring-green-500" oninput="filtrar()">
+                <input type="text" id="f_proveedor" placeholder="Proveedor..." class="p-2 rounded bg-slate-700 border-none text-white placeholder-slate-400 focus:ring-2 focus:ring-green-500" oninput="filtrar()">
+            </div>
+            <p class="text-xs mt-2 text-slate-400">Mostrando <span id="count">0</span> productos de 10,000</p>
+        </div>
+    </header>
 
-        contenedor.innerHTML = "";
-        contenedor.appendChild(fragmento);
-        contador.innerText = datos.length;
-    }
+    <main class="max-w-7xl mx-auto p-6">
+        <div id="contenedor" class="product-grid">
+            </div>
+    </main>
 
-    // Inicializar
-    renderizar(inventario);
-</script>
+    <script>
+        let dataGlobal = [];
 
+        // 1. Generar 10,000 productos (Simulación de carga masiva)
+        function generarData() {
+            const marcas = ["Samsung", "Apple", "Xiaomi", "Oster", "LG", "Sony", "HP"];
+            const proveedores = ["Distribuidora Oriente", "Importaciones Caracas", "Mundo Tech", "Aliado Global"];
+            const tipos = ["Teléfono", "Laptop", "Licuadora", "Monitor", "Cámara"];
+
+            for (let i = 1; i <= 10000; i++) {
+                dataGlobal.push({
+                    id: i,
+                    producto: tipos[i % tipos.length],
+                    marca: marcas[i % marcas.length],
+                    modelo: `Mod-${i + 100}`,
+                    proveedor: proveedores[i % proveedores.length],
+                    precio_usd: (Math.random() * (500 - 10) + 10).toFixed(2),
+                    stock: Math.floor(Math.random() * 50)
+                });
+            }
+            filtrar();
+        }
+
+        // 2. Motor de filtrado y conversión de moneda
+        function filtrar() {
+            const t_prod = document.getElementById('f_producto').value.toLowerCase();
+            const t_marc = document.getElementById('f_marca').value.toLowerCase();
+            const t_mod = document.getElementById('f_modelo').value.toLowerCase();
+            const t_prov = document.getElementById('f_proveedor').value.toLowerCase();
+            const tasa = parseFloat(document.getElementById('tasaBCV').value) || 1;
+
+            const filtrados = dataGlobal.filter(p => 
+                p.producto.toLowerCase().includes(t_prod) &&
+                p.marca.toLowerCase().includes(t_marc) &&
+                p.modelo.toLowerCase().includes(t_mod) &&
+                p.proveedor.toLowerCase().includes(t_prov)
+            );
+
+            renderizar(filtrados, tasa);
+        }
+
+        // 3. Renderizado eficiente (Muestra los primeros 100 para no trabar el PC)
+        function renderizar(lista, tasa) {
+            const contenedor = document.getElementById('contenedor');
+            const count = document.getElementById('count');
+            count.innerText = lista.length.toLocaleString();
+            
+            contenedor.innerHTML = "";
+            const frag = document.createDocumentFragment();
+
+            lista.slice(0, 200).forEach(p => {
+                // REGLA DE NEGOCIO: Conversión automática a BS
+                const precioBS = (p.precio_usd * tasa).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                const card = document.createElement('div');
+                card.className = "bg-white p-4 rounded-lg shadow-sm bcv-card hover:shadow-md transition-shadow";
+                card.innerHTML = `
+                    <div class="text-xs font-bold text-blue-600 mb-1 uppercase">${p.marca} | ${p.proveedor}</div>
+                    <div class="text-lg font-bold text-slate-800">${p.producto}</div>
+                    <div class="text-sm text-slate-500 mb-3 italic">${p.modelo}</div>
+                    
+                    <div class="bg-slate-50 p-2 rounded border border-slate-100">
+                        <div class="text-xs text-slate-400">Precio Divisa</div>
+                        <div class="text-md font-semibold text-slate-700">$${p.precio_usd}</div>
+                        <div class="text-xs text-slate-400 mt-1">Precio al cambio (BCV)</div>
+                        <div class="text-xl font-black text-emerald-600">Bs. ${precioBS}</div>
+                    </div>
+                    
+                    <div class="mt-3 flex justify-between items-center text-xs">
+                        <span class="text-slate-400 font-mono">ID: #${p.id}</span>
+                        <span class="px-2 py-1 bg-slate-200 rounded font-bold">Stock: ${p.stock}</span>
+                    </div>
+                `;
+                frag.appendChild(card);
+            });
+
+            contenedor.appendChild(frag);
+        }
+
+        // Iniciar
+        document.getElementById('tasaBCV').addEventListener('input', filtrar);
+        generarData();
+    </script>
 </body>
 </html>
